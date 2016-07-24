@@ -287,7 +287,9 @@ if __name__ == '__main__':
     main(model='CNN')
 # thresholding and dropout
 #dropout: seem to get a better result, see figures
-# add training data
-# fix MLP:  it will be pending after training because no figures are available for this one.
-# increase epochs: trn/val become worse after 165. it will drop to 0.2 at 300
+# add training data: get a better result. see figures
+# fix MLP:  it will be pending after training because no figures are available for this one. I choose not to show figures.
+#           but the result is not correct
+# increase epochs: trn/val become worse after 165. it will drop to 0.2 at 300. However, after adding training data,
+#                   I get a much better rate.
     
