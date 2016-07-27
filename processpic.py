@@ -45,7 +45,10 @@ class picMat:
         img = img.resize((self.width,self.height),Image.ANTIALIAS)  #resize
         
         data = np.array(img).reshape(self.width*self.height,1).T
-
+        # for thresholding
+        low_values_indices = data < 150
+        data[low_values_indices] = 0
+        #
         return data
     
     
