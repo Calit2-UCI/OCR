@@ -24,7 +24,7 @@ class picMat:
     # classNum  = 41
     classNum = 52
     # sampleNum = 1140
-    sampleNum = 1825
+    sampleNum = 1800
     # sample Num = train folder item num - classNum
     def _init_(self, width, height, channel, classNum, sampleNum):
         self.width = width        #the width of the matrix
@@ -40,12 +40,13 @@ class picMat:
     
     def convertMatHelper(self, filename):
         
-        img = Image.open(filename).convert('I')  
+        img = Image.open(filename).convert('I')
         
         img = img.resize((self.width,self.height),Image.ANTIALIAS)  #resize
         
         data = np.array(img).reshape(self.width*self.height,1).T
         # for thresholding
+        # do it reverse
         low_values_indices = data < 150
         data[low_values_indices] = 0
         #

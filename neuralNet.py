@@ -15,8 +15,8 @@ from nolearn.lasagne.visualize import plot_conv_activity
 from nolearn.lasagne.visualize import plot_occlusion
 
 # import theano
-# theano.config.device = 'cpu'
-# theano.config.floatX = 'float32' #use this config and np.array(dtype='float32') to enable gpu
+# theano.config.device = 'gpu'
+#theano.config.floatX = 'float32' #use this config and np.array(dtype='float32') to enable gpu
 #import theano.tensor as T 
 #import lasagne
 from lasagne import layers, nonlinearities
@@ -31,10 +31,8 @@ from lasagne.nonlinearities import softmax
 #######add by jz
 import shutil
 import processpic as pp
+import platform
 
-resultFolder = 'result/'
-testFolder = 'testBlank/'
-trainFolder = 'train/'
 ########end of add by jz
 
 #### load traindata
@@ -94,8 +92,6 @@ def load_TestData(filename_X='x_test.csv',filename_Y='y_testLabel.csv',width=25,
     x_test = np.array(pd.read_csv(filename_X).iloc[:,1:]/255)
     y_test = np.array(pd.read_csv(filename_Y).iloc[:,1:])
     return x_test,y_test
-
-
 
 
 
@@ -195,8 +191,6 @@ def buildCNN():
     
     return net2
 
-def singleFolderCategorize(classNumber=41):
-    pass
 
 def trainningProcess(model='MLP'):
     print "Start training:"
@@ -210,22 +204,67 @@ def trainningProcess(model='MLP'):
         x_train, y_train = load_TrainData()
         net = build_mlp()
         net.fit(x_train, y_train)
+
+        ################## calculate the precision###################
+
+        print "======================== accuracy=========================="
+        x_test = np.array(pd.read_csv('x_test.csv').iloc[:, 1:] / 255)
+        # y_test = np.array(pd.read_csv('y_test.csv').iloc[:,1:])
+        y_label = np.array(pd.read_csv('y_testLabel.csv').iloc[:, 1:])
+        # print x_test
+        y_pred = net.predict(x_test)
+        pd.DataFrame(y_pred).to_csv('y_pred_MLP.csv')
+        y = []
+
+        for i in range(y_pred.shape[0]):
+            y.append(y_pred[i].tolist().index(max(y_pred[i])) + 1)
+
+        pd.DataFrame(y).to_csv('y_predlabel_MLP.csv')
+        print classification_report(y_label, y)
+
+        ##############save the MLP weights to file##########################
+        net.save_params_to('MLP_weights_file')
+
     elif (model == 'CNN'):
         x_train, y_train = load_TrainData2D()
         net = buildCNN()
         net.fit(x_train, y_train)
-        plot_loss(net)
-        plot_conv_weights(net.layers_[1], figsize=(4, 4))
-        plt.show()
+        # plot_loss(net)
+        # plot_conv_weights(net.layers_[1], figsize=(4, 4))
+        # plt.show()
+    ################## calculate the precision###################
+
+        print "======================== accuracy=========================="
+        x_test ,y_test = load_TestData2D();
+        y_label = np.array(pd.read_csv('y_testLabel.csv').iloc[:,1:])
+
+        y_pred = net.predict(x_test)
+        pd.DataFrame(y_pred).to_csv('y_pred_CNN.csv')
+        y = []
+
+        for i in range(y_pred.shape[0]):
+            y.append(y_pred[i].tolist().index(max(y_pred[i]))+1)
+
+        pd.DataFrame(y).to_csv('y_predlabel_CNN.csv')
+        print classification_report(y_label, y)
+    ##############save the CNN weights to file##########################
+        net.save_params_to('CNN_weights_file')
+
     else:
         print 'ERROR: Please select a model #MLP or #CNN !'
 
     ############ end of training process #################
+
     return net, picmat
 
 
+######JZ added functions below for categorizing images into different folders in order to get training data easier
 
-def createCategorizedFolders(resultFolder ='result/' ):
+resultFolder = 'result/'
+testFolder = 'dataFolder/'
+trainFolder = 'train/'
+
+def createCategorizedFolders():
     print 'create category folders'
     if os.path.exists(resultFolder):
         shutil.rmtree(resultFolder)
@@ -237,12 +276,12 @@ def createCategorizedFolders(resultFolder ='result/' ):
     print 'creating folders succeeded'
     return categoryList
 
-def categorize(net, picmat, categoryList, testFolder = 'testBlank/',model='MLP'):
+def categorize(net, picmat, categoryList, model='CNN'):
     print 'start categorizing images'
     testData = os.listdir(testFolder)
     testData.sort()
     for root in testData:
-        curPath = testFolder + root +'/nonBlank'+ '/'
+        curPath = testFolder + root + '/'
         print 'curent path: ', curPath
         picmat.saveRawTestData(curPath)
         if model == 'MLP':
@@ -259,19 +298,20 @@ def categorize(net, picmat, categoryList, testFolder = 'testBlank/',model='MLP')
              shutil.copy(curPath+dataList[i], resultFolder + categoryList[y_pred[i].tolist().index(max(y_pred[i]))])
     print 'categorizing succeeded'
 
+	#
+    # pd.DataFrame(y_pred).to_csv('y_pred_{}.csv'.format(model))
+    # y = []
+	#
+    # for i in range(y_pred.shape[0]):
+    #     y.append(y_pred[i].tolist().index(max(y_pred[i])) + 1)
+	#
+    # pd.DataFrame(y).to_csv('y_predlabel_{}.csv'.format(model))
+    # print classification_report(y_label, y)
 
-    pd.DataFrame(y_pred).to_csv('y_pred_{}.csv'.format(model))
-    y = []
-
-    for i in range(y_pred.shape[0]):
-        y.append(y_pred[i].tolist().index(max(y_pred[i])) + 1)
-
-    pd.DataFrame(y).to_csv('y_predlabel_{}.csv'.format(model))
-    print classification_report(y_label, y)
 
 
 
-def main(model='MLP'):
+def main(model='CNN'):
     # note:
     # 1. still finding a way to get the test data directory instand of putting
     # them in a csv file and read again.
@@ -284,12 +324,20 @@ def main(model='MLP'):
     # shutil.rmtree(testFolder)
 if __name__ == '__main__':
     # main(model="MLP")
-    main(model='CNN')
-# thresholding and dropout
+    print(platform.system())
+    if(platform.system()== "Darwin"):
+        os.system("find . -name '.DS_Store' -type f -delete")
+    # main(model='CNN')
+
+
+
+# thresholding: seems to be similar. see figure
 #dropout: seem to get a better result, see figures
 # add training data: get a better result. see figures
-# fix MLP:  it will be pending after training because no figures are available for this one. I choose not to show figures.
-#           but the result is not correct
 # increase epochs: trn/val become worse after 165. it will drop to 0.2 at 300. However, after adding training data,
 #                   I get a much better rate.
-    
+
+
+# for mac users before running this program:
+# in terminal cd to the OCR directory and do:
+# find . -name '.DS_Store' -type f -delete
