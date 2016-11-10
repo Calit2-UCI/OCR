@@ -11,6 +11,9 @@ import os.path
 import glob
 import pandas as pd
 from scipy import stats
+from scipy.misc import toimage
+
+
 #----------------this is py file to convert PNG file into matrix for future machine learning------
 #----------------it will create x_train.csv and y_train.csv-------
 ##                                                               @author Tianle Zhang
@@ -43,13 +46,13 @@ class picMat:
         img = Image.open(filename).convert('I')
         
         img = img.resize((self.width,self.height),Image.ANTIALIAS)  #resize
-        
         data = np.array(img).reshape(self.width*self.height,1).T
         # for thresholding
-        # do it reverse
-        low_values_indices = data < 150
+        low_values_indices = data < 180
         data[low_values_indices] = 0
-        #
+        high_values_indices = data >= 180
+        data[high_values_indices] = 255
+        # toimage(data).show()
         return data
     
     
@@ -145,36 +148,65 @@ class picMat:
         else:
             all_train.to_csv('train.csv')
             
-    #### Load test pictures and transfer them into matrix
-    #    create the x_test.csv 
-    
+    ## Load test pictures and transfer them into matrix
+       ## create the x_test.csv
+    # def __CombineTestData(self,foldername='test/'):
+    #     currentClass = 'whatever'
+    #     ClassName = 0
+    #     label_y=[]
+    #
+    #     x_test = np.zeros((1,self.width*self.height))
+    #
+    #     lst = os.listdir(foldername)
+    #     lst.sort()
+    #     #print lst
+    #     for files in lst:
+    #
+    #         if (files[:2] != currentClass):
+    #             currentClass = files[:2]
+    #             ClassName+=1
+    #
+    #         data = self.convertMatHelper(foldername+files)
+    #         x_test = np.concatenate((x_test,data),axis=0)
+    #         label_y.append(ClassName)
+    #
+    #     x_test = pd.DataFrame(x_test)
+    #     x_test = x_test.drop(0,axis=0)
+    #     #x_test.to_csv('x_test.csv')
+    #
+    #     label_y = pd.DataFrame(np.array(label_y),columns=['class'])
+    #     #label_y.to_csv('y_testLabel.csv')
+    #
+    #     return x_test,label_y
+    #
     def __CombineTestData(self, foldername='test/'):
         currentClass = 'whatever'
         ClassName = 0
         label_y=[]
-        
+
         x_test = np.zeros((1,self.width*self.height))
-        
+
         lst = os.listdir(foldername)
         lst.sort()
-        #print lst
-        for files in lst: 
-            
-            if (files[:2] != currentClass):
-                currentClass = files[:2]
-                ClassName+=1
-            
-            data = self.convertMatHelper(foldername + files)
-            x_test = np.concatenate((x_test,data),axis=0)
-            label_y.append(ClassName)
-        
+        print lst
+        for filefolder in lst:
+            for files in sorted(os.listdir(foldername+filefolder+"/")):
+                # print files
+                if (files[:2] != currentClass):
+                    currentClass = files[:2]
+                    ClassName+=1
+
+                data = self.convertMatHelper(foldername+filefolder+"/" + files)
+                x_test = np.concatenate((x_test,data),axis=0)
+                label_y.append(ClassName)
+
         x_test = pd.DataFrame(x_test)
         x_test = x_test.drop(0,axis=0)
         #x_test.to_csv('x_test.csv')
-        
+
         label_y = pd.DataFrame(np.array(label_y),columns=['class'])
         #label_y.to_csv('y_testLabel.csv')
-        
+
         return x_test,label_y
 
     def getTestData(self, foldername ='test/'):
@@ -188,7 +220,7 @@ class picMat:
         lst.sort()
         # print lst
         for files in lst:
-
+            # print file
             data = self.convertMatHelper(foldername + files)
             x_test = np.concatenate((x_test, data), axis=0)
         # x_test = pd.DataFrame(x_test)
@@ -209,12 +241,12 @@ class picMat:
 if __name__ == '__main__': 
     
     p = picMat()
-    
+    #
     p.saveRawMatrix()    #create x_train, y_label
     p.saveTrainY()       #create y_train
     p.saveTrainData()    #create train
-    # p.saveRawTestData()  #create x_test, y_testLabel
-    
+    p.saveRawTestData("test/")  #create x_test, y_testLabel
+    # p.convertMatHelper("test/1/Ca1.png")
         
 
     
