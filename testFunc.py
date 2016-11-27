@@ -1,6 +1,6 @@
 """
 @author: Jenny Zeng zhaohuaz@uci.edu
-this is a file for removing boundary of a image
+this is a file for removing boundaries of an image in a directory
 """
 
 import platform
